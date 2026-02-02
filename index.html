@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reloj Estacional Infinito</title>
+    <title>Reloj Estacional - Sintonía Fina</title>
     <style>
         body {
             margin: 0;
@@ -13,7 +13,6 @@
             justify-content: center;
             align-items: center;
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            /* Transición ultra suave para el cambio de color */
             transition: background-color 1s linear; 
             color: white;
             text-align: center;
@@ -26,8 +25,7 @@
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: -3px;
-            /* Sombra sutil para legibilidad en fondos claros (como el amarillo) */
-            filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
+            filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.5));
         }
 
         .progress-container {
@@ -37,7 +35,6 @@
             border-radius: 7px;
             overflow: hidden;
             margin-bottom: 25px;
-            box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         }
 
         .progress-bar {
@@ -51,7 +48,7 @@
             font-size: 1.5rem;
             font-weight: 400;
             margin: 5px 0;
-            filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.2));
+            filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.4));
         }
 
         #fecha-completa {
@@ -64,72 +61,66 @@
 <body>
 
     <h1 id="estacion-nombre">VERANO</h1>
-    
-    <div class="progress-container">
-        <div id="barra-progreso" class="progress-bar"></div>
-    </div>
-    
+    <div class="progress-container"><div id="barra-progreso" class="progress-bar"></div></div>
     <p id="porcentaje-texto">0%</p>
     <p id="fecha-completa"></p>
 
     <script>
-        function obtenerColorEstacional(fecha) {
-            // Calculamos el progreso del año total (0 a 1)
-            const inicioAño = new Date(fecha.getFullYear(), 0, 1);
-            const finAño = new Date(fecha.getFullYear() + 1, 0, 1);
-            const progresoAño = (fecha - inicioAño) / (finAño - inicioAño);
-
-            // Definimos los Hues (tonos) en el círculo cromático:
-            // Rojo (Verano): 0 | Amarillo (Otoño): 50 | Celeste (Invierno): 190 | Verde (Primavera): 120
-            
-            // Para que el rojo sea a mitad de verano (febrero), el amarillo a mitad de otoño (mayo), etc.
-            // Ajustamos el desfase para que coincida con el ritmo de la Tierra
-            let hue;
-            
-            if (progresoAño < 0.25) { // Verano a Otoño
-                hue = 0 + (50 - 0) * (progresoAño / 0.25);
-            } else if (progresoAño < 0.50) { // Otoño a Invierno
-                hue = 50 + (190 - 50) * ((progresoAño - 0.25) / 0.25);
-            } else if (progresoAño < 0.75) { // Invierno a Primavera
-                hue = 190 + (120 - 190) * ((progresoAño - 0.50) / 0.25);
-            } else { // Primavera a Verano
-                hue = 120 + (360 - 120) * ((progresoAño - 0.75) / 0.25);
-            }
-
-            return `hsl(${hue}, 75%, 45%)`;
-        }
-
         function actualizarReloj() {
             const ahora = new Date();
             const año = ahora.getFullYear();
             
-            const estaciones = [
-                { nombre: "Verano", inicio: new Date(año - 1, 11, 21), fin: new Date(año, 2, 20), proxima: "Otoño" },
-                { nombre: "Otoño", inicio: new Date(año, 2, 21), fin: new Date(año, 5, 20), proxima: "Invierno" },
-                { nombre: "Invierno", inicio: new Date(año, 5, 21), fin: new Date(año, 8, 20), proxima: "Primavera" },
-                { nombre: "Primavera", inicio: new Date(año, 8, 21), fin: new Date(año, 11, 20), proxima: "Verano" }
+            // Hitos de color puro (Mitad de cada estación)
+            const hitos = [
+                { fecha: new Date(año, 1, 4), hue: 0 },       // ROJO (4 Feb)
+                { fecha: new Date(año, 4, 5), hue: 50 },      // AMARILLO (5 May)
+                { fecha: new Date(año, 7, 5), hue: 190 },     // CELESTE (5 Ago)
+                { fecha: new Date(año, 10, 5), hue: 120 }     // VERDE (5 Nov)
             ];
 
-            let index = estaciones.findIndex(e => ahora >= e.inicio && ahora <= e.fin);
-            if (index === -1) index = 0; 
-            const actual = estaciones[index];
+            let hitoPrev, hitoSig;
 
-            const porcentaje = Math.floor(((ahora - actual.inicio) / (actual.fin - actual.inicio)) * 100);
+            if (ahora < hitos[0].fecha) {
+                // Estamos entre el Verde del año pasado y el Rojo de ahora
+                hitoPrev = { fecha: new Date(año - 1, 10, 5), hue: 120 };
+                hitoSig = hitos[0];
+            } else if (ahora < hitos[1].fecha) {
+                hitoPrev = hitos[0];
+                hitoSig = hitos[1];
+            } else if (ahora < hitos[2].fecha) {
+                hitoPrev = hitos[1];
+                hitoSig = hitos[2];
+            } else if (ahora < hitos[3].fecha) {
+                hitoPrev = hitos[2];
+                hitoSig = hitos[3];
+            } else {
+                hitoPrev = hitos[3];
+                hitoSig = { fecha: new Date(año + 1, 1, 4), hue: 360 };
+            }
 
-            // Actualizar Color de fondo dinámicamente cada segundo
-            document.body.style.backgroundColor = obtenerColorEstacional(ahora);
-            
-            // Actualizar Textos
-            document.getElementById('estacion-nombre').innerText = actual.nombre;
-            document.getElementById('barra-progreso').style.width = porcentaje + "%";
-            document.getElementById('porcentaje-texto').innerText = `${porcentaje}% del ${actual.nombre}`;
+            const factor = (ahora - hitoPrev.fecha) / (hitoSig.fecha - hitoPrev.fecha);
+            const hueDinamico = hitoPrev.hue + (hitoSig.hue - hitoPrev.hue) * factor;
 
-            const diasFaltantes = Math.ceil((actual.fin - ahora) / (1000 * 60 * 60 * 24));
+            // Datos de la estación astronómica
+            const estaciones = [
+                { nombre: "Verano", inicio: new Date(año - 1, 11, 21), fin: new Date(año, 2, 20), prox: "Otoño" },
+                { nombre: "Otoño", inicio: new Date(año, 2, 21), fin: new Date(año, 5, 20), prox: "Invierno" },
+                { nombre: "Invierno", inicio: new Date(año, 5, 21), fin: new Date(año, 8, 20), prox: "Primavera" },
+                { nombre: "Primavera", inicio: new Date(año, 8, 21), fin: new Date(año, 11, 20), prox: "Verano" }
+            ];
+
+            let estActual = estaciones.find(e => ahora >= e.inicio && ahora <= e.fin) || estaciones[0];
+            const porc = Math.floor(((ahora - estActual.inicio) / (estActual.fin - estActual.inicio)) * 100);
+
+            document.body.style.backgroundColor = `hsl(${hueDinamico}, 70%, 40%)`;
+            document.getElementById('estacion-nombre').innerText = estActual.nombre;
+            document.getElementById('barra-progreso').style.width = porc + "%";
+            document.getElementById('porcentaje-texto').innerText = `${porc}% del ${estActual.nombre}`;
+
+            const dias = Math.ceil((estActual.fin - ahora) / (1000 * 60 * 60 * 24));
             const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
             let fechaTexto = ahora.toLocaleDateString('es-ES', opciones);
-            fechaTexto = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
-            
-            document.getElementById('fecha-completa').innerText = `${fechaTexto}, faltan ${diasFaltantes} días para el ${actual.proxima}`;
+            document.getElementById('fecha-completa').innerText = `${fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1)}, faltan ${dias} días para el ${estActual.prox}`;
         }
 
         setInterval(actualizarReloj, 1000);
