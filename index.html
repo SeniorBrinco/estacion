@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reloj Estacional - Sintonía Fina</title>
+    <title>Reloj Estacional</title>
     <style>
         body {
             margin: 0;
@@ -35,6 +35,8 @@
             border-radius: 7px;
             overflow: hidden;
             margin-bottom: 25px;
+            /* Sombras aplicadas al contenedor de la barra */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         .progress-bar {
@@ -42,6 +44,8 @@
             background: white;
             width: 0%;
             transition: width 1s ease-in-out;
+            /* Brillo interno opcional para que la barra resalte más */
+            box-shadow: inset 0px 0px 5px rgba(255,255,255,0.5);
         }
 
         p {
@@ -70,18 +74,15 @@
             const ahora = new Date();
             const año = ahora.getFullYear();
             
-            // Hitos de color puro (Mitad de cada estación)
             const hitos = [
-                { fecha: new Date(año, 1, 4), hue: 0 },       // ROJO (4 Feb)
-                { fecha: new Date(año, 4, 5), hue: 50 },      // AMARILLO (5 May)
-                { fecha: new Date(año, 7, 5), hue: 190 },     // CELESTE (5 Ago)
-                { fecha: new Date(año, 10, 5), hue: 120 }     // VERDE (5 Nov)
+                { fecha: new Date(año, 1, 4), hue: 0 },       // ROJO
+                { fecha: new Date(año, 4, 5), hue: 50 },      // AMARILLO
+                { fecha: new Date(año, 7, 5), hue: 190 },     // CELESTE
+                { fecha: new Date(año, 10, 5), hue: 120 }     // VERDE
             ];
 
             let hitoPrev, hitoSig;
-
             if (ahora < hitos[0].fecha) {
-                // Estamos entre el Verde del año pasado y el Rojo de ahora
                 hitoPrev = { fecha: new Date(año - 1, 10, 5), hue: 120 };
                 hitoSig = hitos[0];
             } else if (ahora < hitos[1].fecha) {
@@ -101,7 +102,6 @@
             const factor = (ahora - hitoPrev.fecha) / (hitoSig.fecha - hitoPrev.fecha);
             const hueDinamico = hitoPrev.hue + (hitoSig.hue - hitoPrev.hue) * factor;
 
-            // Datos de la estación astronómica
             const estaciones = [
                 { nombre: "Verano", inicio: new Date(año - 1, 11, 21), fin: new Date(año, 2, 20), prox: "Otoño" },
                 { nombre: "Otoño", inicio: new Date(año, 2, 21), fin: new Date(año, 5, 20), prox: "Invierno" },
@@ -118,13 +118,17 @@
             document.getElementById('porcentaje-texto').innerText = `${porc}% del ${estActual.nombre}`;
 
             const dias = Math.ceil((estActual.fin - ahora) / (1000 * 60 * 60 * 24));
+            
             const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            let fechaTexto = ahora.toLocaleDateString('es-ES', opciones);
-            document.getElementById('fecha-completa').innerText = `${fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1)}, faltan ${dias} días para el ${estActual.prox}`;
+            let fechaTexto = ahora.toLocaleDateString('es-ES', opciones).replace(',', '');
+            fechaTexto = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+            
+            // Aquí ya no repetimos "de 2026" porque fechaTexto ya lo trae
+            document.getElementById('fecha-completa').innerText = `${fechaTexto}, faltan ${dias} días para el ${estActual.prox}`;
         }
 
-        setInterval(actualizarReloj, 1000);
-        actualizarReloj();
+            setInterval(actualizarReloj, 1000);
+            actualizarReloj();
     </script>
 </body>
 </html>
