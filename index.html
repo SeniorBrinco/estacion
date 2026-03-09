@@ -59,31 +59,41 @@
             margin-top: 10px;
         }
 
-        /* Estilos para el slider oculto */
-        #time-travel-container {
+        /* Slider Minimalista Oculto */
+        #time-slider {
             display: none;
             position: absolute;
-            bottom: 40px;
+            bottom: 50px;
             width: 80%;
-            max-width: 600px;
-            background: rgba(0,0,0,0.2);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 400px;
+            -webkit-appearance: none;
+            background: transparent;
+            outline: none;
         }
 
-        input[type=range] {
+        /* Pista gris */
+        #time-slider::-webkit-slider-runnable-track {
             width: 100%;
-            cursor: pointer;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
         }
 
-        .label-travel {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            display: block;
+        /* Punto blanco */
+        #time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -7px; /* Centra el punto en la linea */
+            box-shadow: 0 0 6px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
+        }
+
+        #time-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
     </style>
 </head>
@@ -94,46 +104,65 @@
     <p id="porcentaje-texto">0%</p>
     <p id="fecha-completa"></p>
 
-    <div id="time-travel-container">
-        <span class="label-travel">Modo Viaje en el Tiempo (Shift + T para cerrar)</span>
-        <input type="range" id="time-slider" min="1" max="365" value="1">
-    </div>
+    <input type="range" id="time-slider" min="1" max="365" value="1">
 
     <script>
         let isTimeTravelMode = false;
-        const sliderContainer = document.getElementById('time-travel-container');
         const timeSlider = document.getElementById('time-slider');
 
-        // Escuchar combinación Shift + T
+        // Función para calcular el día del año (1 a 365)
+        function obtenerDiaDelAño(fecha) {
+            const inicio = new Date(fecha.getFullYear(), 0, 0);
+            const diferencia = fecha - inicio;
+            const unDia = 1000 * 60 * 60 * 24;
+            return Math.floor(diferencia / unDia);
+        }
+
+        // Listener para Shift + T
         document.addEventListener('keydown', (e) => {
             if (e.shiftKey && e.key.toLowerCase() === 't') {
                 isTimeTravelMode = !isTimeTravelMode;
-                sliderContainer.style.display = isTimeTravelMode ? 'block' : 'none';
-                if (!isTimeTravelMode) actualizarReloj(); // Volver al tiempo real
+                if (isTimeTravelMode) {
+                    timeSlider.style.display = 'block';
+                    // Posicionar el slider en el día actual al abrirlo
+                    timeSlider.value = obtenerDiaDelAño(new Date());
+                    actualizarReloj();
+                } else {
+                    timeSlider.style.display = 'none';
+                    actualizarReloj(); // Vuelve a la fecha real
+                }
             }
         });
+
+        // Función para interpolar RGB matemáticamente (ida y vuelta limpia)
+        function mezclarRGB(rgb1, rgb2, factor) {
+            const r = Math.round(rgb1[0] + (rgb2[0] - rgb1[0]) * factor);
+            const g = Math.round(rgb1[1] + (rgb2[1] - rgb1[1]) * factor);
+            const b = Math.round(rgb1[2] + (rgb2[2] - rgb1[2]) * factor);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
 
         function actualizarReloj() {
             let ahora = new Date();
             const añoActual = ahora.getFullYear();
 
-            // Si estamos en modo viaje, calculamos la fecha basada en el slider
             if (isTimeTravelMode) {
                 const diaDelAño = parseInt(timeSlider.value);
                 ahora = new Date(añoActual, 0, diaDelAño);
             }
 
-            // --- LÓGICA DE COLORES ---
+            // Tus colores Hex convertidos a RGB puro
+            // Verano: e61717 | Otoño: ff8000 | Invierno: 17e6e6 | Primavera: 29cc44
             const hitos = [
-                { fecha: new Date(añoActual, 1, 4), hue: 0 },       // ROJO
-                { fecha: new Date(añoActual, 4, 5), hue: 50 },      // AMARILLO
-                { fecha: new Date(añoActual, 7, 5), hue: 190 },     // CELESTE
-                { fecha: new Date(añoActual, 10, 5), hue: 120 }     // VERDE
+                { fecha: new Date(añoActual, 1, 4), rgb: [230, 23, 23] },      // VERANO
+                { fecha: new Date(añoActual, 4, 5), rgb: [255, 128, 0] },      // OTOÑO
+                { fecha: new Date(añoActual, 7, 5), rgb: [23, 230, 230] },     // INVIERNO
+                { fecha: new Date(añoActual, 10, 5), rgb: [41, 204, 68] }      // PRIMAVERA
             ];
 
             let hitoPrev, hitoSig;
             if (ahora < hitos[0].fecha) {
-                hitoPrev = { fecha: new Date(añoActual - 1, 10, 5), hue: 120 };
+                hitoPrev = { fecha: new Date(añoActual - 1, 10, 5), rgb: [41, 204, 68] };
                 hitoSig = hitos[0];
             } else if (ahora < hitos[1].fecha) {
                 hitoPrev = hitos[0];
@@ -146,13 +175,12 @@
                 hitoSig = hitos[3];
             } else {
                 hitoPrev = hitos[3];
-                hitoSig = { fecha: new Date(añoActual + 1, 1, 4), hue: 360 };
+                hitoSig = { fecha: new Date(añoActual + 1, 1, 4), rgb: [230, 23, 23] };
             }
 
             const factor = (ahora - hitoPrev.fecha) / (hitoSig.fecha - hitoPrev.fecha);
-            const hueDinamico = hitoPrev.hue + (hitoSig.hue - hitoPrev.hue) * factor;
+            const colorDinamico = mezclarRGB(hitoPrev.rgb, hitoSig.rgb, factor);
 
-            // --- LÓGICA DE ESTACIONES ---
             const estaciones = [
                 { nombre: "Verano", inicio: new Date(añoActual - 1, 11, 21), fin: new Date(añoActual, 2, 20), prox: "Otoño" },
                 { nombre: "Otoño", inicio: new Date(añoActual, 2, 21), fin: new Date(añoActual, 5, 20), prox: "Invierno" },
@@ -160,10 +188,8 @@
                 { nombre: "Primavera", inicio: new Date(añoActual, 8, 21), fin: new Date(añoActual, 11, 20), prox: "Verano" }
             ];
 
-            // Re-ajuste de estaciones para el slider si cruza año
             let estActual = estaciones.find(e => ahora >= e.inicio && ahora <= e.fin);
             if (!estActual) {
-                // Si es finales de diciembre (después del 20), es Verano
                 if (ahora.getMonth() === 11 && ahora.getDate() > 20) {
                     estActual = { nombre: "Verano", inicio: new Date(añoActual, 11, 21), fin: new Date(añoActual + 1, 2, 20), prox: "Otoño" };
                 } else {
@@ -172,29 +198,23 @@
             }
 
             const porc = Math.floor(((ahora - estActual.inicio) / (estActual.fin - estActual.inicio)) * 100);
-            const diasFaltantes = Math.ceil((estActual.fin - ahora) / (1000 * 60 * 60 * 24));
-
-            // --- ACTUALIZACIÓN DE INTERFAZ ---
-            document.body.style.backgroundColor = `hsl(${hueDinamico}, 70%, 40%)`;
+            
+            // Actualizar interfaz
+            document.body.style.backgroundColor = colorDinamico;
             document.getElementById('estacion-nombre').innerText = estActual.nombre;
             document.getElementById('barra-progreso').style.width = Math.max(0, Math.min(100, porc)) + "%";
             document.getElementById('porcentaje-texto').innerText = `${porc}% del ${estActual.nombre}`;
 
+            const dias = Math.ceil((estActual.fin - ahora) / (1000 * 60 * 60 * 24));
             const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
             let fechaTexto = ahora.toLocaleDateString('es-ES', opciones).replace(',', '');
             fechaTexto = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
             
-            document.getElementById('fecha-completa').innerText = `${fechaTexto}, faltan ${diasFaltantes} días para el ${estActual.prox}`;
+            document.getElementById('fecha-completa').innerText = `${fechaTexto}, faltan ${dias} días para el ${estActual.prox}`;
         }
 
-        // Listener para que el slider actualice todo en tiempo real
         timeSlider.addEventListener('input', actualizarReloj);
-
-        // Intervalo normal
-        setInterval(() => {
-            if (!isTimeTravelMode) actualizarReloj();
-        }, 1000);
-
+        setInterval(() => { if (!isTimeTravelMode) actualizarReloj(); }, 1000);
         actualizarReloj();
     </script>
 </body>
